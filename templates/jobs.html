@@ -1,0 +1,32 @@
+
+{% extends "base.html" %}
+{% block title %}Jobs — AI Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar">
+  <div><div class="eyebrow">JOB PROFILES</div><h1>Job Profiles</h1><p>Create and manage job requirements for candidate matching.</p></div>
+  <div class="header-actions"><a class="secondary-btn" href="{{ url_for('dashboard') }}">← Dashboard</a><a class="primary-btn" href="{{ url_for('new_job') }}">＋ New Job</a></div>
+</header>
+
+<section class="table-card">
+  <div class="table-header"><div><h2>Available jobs</h2><p>Required skills, experience and education are used by the matching engine.</p></div><span class="count-badge">{{ jobs|length }} jobs</span></div>
+  {% if jobs %}
+  <div class="table-wrap">
+    <table><thead><tr><th>Job</th><th>Required Skills</th><th>Experience</th><th>Education</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for job in jobs %}
+      <tr>
+        <td><strong>{{ job.title }}</strong><small>{{ job.description[:90] }}</small></td>
+        <td><div class="tag-row">{% for s in job.required_skills %}<span class="tag">{{ s }}</span>{% endfor %}</div></td>
+        <td>{{ job.experience_required }} yrs</td>
+        <td>{{ job.education_required or 'Not required' }}</td>
+        <td><span class="status-pill">{{ job.status or 'Published' }}</span></td>
+        <td><div class="header-actions"><a class="view-link" href="{{ url_for('matching', job_id=job.id) }}">Match →</a><a class="view-link" href="{{ url_for('job_edit', job_id=job.id) }}">Edit</a>
+        <form method="POST" action="{{ url_for('job_status', job_id=job.id) }}"><input type="hidden" name="status" value="{{ 'Closed' if (job.status or 'Published') == 'Published' else 'Published' }}"><button class="secondary-btn" type="submit">{{ 'Close' if (job.status or 'Published') == 'Published' else 'Publish' }}</button></form>
+        <form method="POST" action="{{ url_for('job_delete', job_id=job.id) }}" onsubmit="return confirm('Delete this job?');"><button class="danger-btn" type="submit">Delete</button></form></div></td>
+      </tr>
+    {% endfor %}
+    </tbody></table>
+  </div>
+  {% else %}<div class="empty"><h3>No jobs found</h3><a class="primary-btn" href="{{ url_for('new_job') }}">Create job</a></div>{% endif %}
+</section>
+{% endblock %}

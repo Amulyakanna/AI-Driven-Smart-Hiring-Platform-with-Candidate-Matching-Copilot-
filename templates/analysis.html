@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}AI Resume Analysis — AI Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar">
+  <div><div class="eyebrow">AI RESUME INTELLIGENCE</div><h1>AI Resume Analysis</h1><p>Explainable insights generated from the parsed candidate profile.</p></div>
+  <div class="header-actions"><a class="secondary-btn" href="{{ url_for('candidate_detail', candidate_id=candidate.id) }}">← Profile</a><a class="primary-btn" href="{{ url_for('dashboard') }}">Dashboard</a></div>
+</header>
+
+<section class="ai-hero">
+ <div class="ai-orb">✦</div><div><div class="ai-badge">AI-STYLE ANALYSIS</div><h2>{{ candidate.name or "Candidate" }}</h2><p>Profile-quality analysis for . This is not an automated hiring decision.</p></div>
+ <div class="ai-score"><div class="score-number">{{ analysis.score }}</div><div class="score-label">Profile signal score</div><span class="score-level {{ analysis.level_class }}">{{ analysis.level }}</span></div>
+</section>
+
+<section class="ai-kpi-grid">
+{% for label,value,small in [("Skills detected",analysis.skill_count,"Technical signals"),("Experience",analysis.experience_years|string+" yrs","Detected experience"),("Projects",analysis.project_count,"Hands-on signals"),("Completeness",analysis.completeness|string+"%","Core fields present")] %}
+<div class="ai-kpi"><span>{{ label }}</span><strong>{{ value }}</strong><small>{{ small }}</small></div>
+{% endfor %}
+</section>
+
+<section class="analysis-grid">
+<div class="analysis-card"><div class="analysis-title"><div><span class="mini-icon">✓</span><h2>Profile strengths</h2></div><span class="ai-label">INSIGHTS</span></div>
+{% for x in analysis.strengths %}<div class="insight-row"><span class="check">✓</span><p>{{ x }}</p></div>{% endfor %}</div>
+<div class="analysis-card"><div class="analysis-title"><div><span class="mini-icon">!</span><h2>What to improve</h2></div><span class="ai-label">ACTION PLAN</span></div>
+{% for x in analysis.recommendations %}<div class="insight-row"><span class="warn">!</span><p>{{ x }}</p></div>{% endfor %}</div>
+</section>
+
+<section class="analysis-grid">
+<div class="analysis-card"><div class="analysis-title"><div><span class="mini-icon">◎</span><h2>Resume health check</h2></div><span class="ai-label">{{ analysis.health }}% HEALTH</span></div>
+<div class="health-meter"><i style="width:{{ analysis.health }}%"></i></div>
+{% for name,ok,evidence,fix in analysis.checks %}<div class="health-item"><span class="{{ 'status-pass' if ok else 'status-fail' }}">{{ '✓' if ok else '!' }}</span><div><strong>{{ name }}</strong><small>{{ evidence if ok else fix }}</small></div></div>{% endfor %}
+</div>
+<div class="analysis-card"><div class="analysis-title"><div><span class="mini-icon">⚡</span><h2>Priority improvement plan</h2></div><span class="ai-label">RECOMMENDED</span></div>
+{% for x in analysis.recommendations[:5] %}<div class="priority-item"><span class="priority-number">{{ loop.index }}</span><div><strong>Priority {{ loop.index }}</strong><p>{{ x }}</p></div></div>{% endfor %}
+<div class="career-signal"><span>Career signal</span><strong>{{ analysis.seniority }}</strong></div>
+</div>
+</section>
+
+<section class="analysis-card full-card"><div class="analysis-title"><div><span class="mini-icon">◈</span><h2>Skill intelligence</h2></div><span class="ai-label">DETECTED GROUPS</span></div>
+{% for name,skills in analysis.skill_groups %}<div class="skill-group"><div class="skill-group-head"><strong>{{ name }}</strong><span>{{ skills|length }} detected</span></div><div class="large-tags">{% for skill in skills %}<span class="skill-tag">{{ skill }}</span>{% endfor %}</div></div>{% else %}<p class="muted-text">No predefined skill groups detected.</p>{% endfor %}
+</section>
+
+<section class="analysis-card full-card"><div class="analysis-title"><div><span class="mini-icon">▦</span><h2>Resume section coverage</h2></div><span class="ai-label">{{ analysis.section_percent }}% COVERED</span></div>
+<div class="coverage-grid">{% for name,ok in analysis.sections %}<div class="coverage-item"><div class="coverage-head"><span>{{ name }}</span><b>{{ "Ready" if ok else "Missing" }}</b></div><div class="coverage-bar"><i class="{{ 'filled' if ok else '' }}"></i></div></div>{% endfor %}</div>
+</section>
+
+<section class="analysis-card full-card"><div class="analysis-title"><div><span class="mini-icon">⌕</span><h2>ATS keyword readiness</h2></div><span class="ai-label">{{ analysis.keyword_found }}/{{ analysis.keyword_map|length }} TRACKED</span></div>
+<p class="analysis-help">General keyword signals for demonstration. Job-specific matching can be added in a later .</p>
+<div class="keyword-grid">{% for keyword,found in analysis.keyword_map %}<div class="keyword-check {{ 'keyword-found' if found else 'keyword-missing' }}"><span>{{ '✓' if found else '○' }}</span><strong>{{ keyword }}</strong><small>{{ 'Detected' if found else 'Not detected' }}</small></div>{% endfor %}</div>
+</section>
+
+<section class="ai-next"><div><div class="ai-badge">→ </div><h2>Structured profile ready for deeper matching</h2><p>The extracted profile can later support candidate-job matching and skill-gap analysis.</p></div><a class="secondary-btn" href="{{ url_for('candidate_detail', candidate_id=candidate.id) }}">View full profile →</a></section>
+{% endblock %}

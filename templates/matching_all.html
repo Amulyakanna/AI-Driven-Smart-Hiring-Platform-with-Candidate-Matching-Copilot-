@@ -1,0 +1,27 @@
+
+{% extends "base.html" %}
+{% block title %}All Matching Results — AI Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar">
+  <div><div class="eyebrow">MATCHING RESULTS</div><h1>All Candidate × Job Results</h1><p>DataFrame-style matrix across every stored candidate and job.</p></div>
+  <div class="header-actions"><a class="secondary-btn" href="{{ url_for('matching') }}">← Matching</a><a class="primary-btn" href="{{ url_for('matching_export_excel') }}">Export Excel</a></div>
+</header>
+<section class="table-card">
+  <div class="table-header"><div><h2>Matching results</h2><p>{{ rows|length }} candidate-job combinations</p></div></div>
+  {% if rows %}
+  <div class="table-wrap">
+    <table><thead><tr><th>Candidate</th><th>Job</th><th>Hiring Score</th><th>Skill Score</th><th>Experience</th><th>Education</th><th>Matched</th><th>Missing</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td><strong>{{ row["Candidate"] }}</strong></td><td>{{ row["Job Title"] }}</td>
+        <td><strong>{{ row["Hiring Score (%)"] }}%</strong></td>
+        <td>{{ row["Skill Score (%)"] }}%</td><td>{{ row["Experience Score (%)"] }}%</td><td>{{ row["Education Score (%)"] }}%</td>
+        <td>{{ row["Matched Skills"] or "—" }}</td><td>{{ row["Missing Skills"] or "None" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody></table>
+  </div>
+  {% else %}<div class="empty"><h3>No matching records</h3><p>Upload resumes and create jobs first.</p></div>{% endif %}
+</section>
+{% endblock %}

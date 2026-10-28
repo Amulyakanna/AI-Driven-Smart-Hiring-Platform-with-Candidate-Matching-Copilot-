@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Recruitment Copilot{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+</head>
+<body class="role-{{ session.get('role', 'guest') }}">
+{% if session.get('username') %}
+<aside class="sidebar">
+ <div class="brand"><div class="brand-icon">RC</div><div><strong>Recruitment Copilot</strong><span>AI Talent Platform</span></div></div>
+ <nav>
+  {% if session.get('role') == 'user' %}
+   <a href="{{ url_for('dashboard') }}">▦ <span>Dashboard</span></a>
+   <a href="{{ url_for('upload') }}">▣ <span>Resume Upload</span></a>
+   <a href="{{ url_for('dashboard') }}#candidates">♟ <span>My Profile &amp; Activity</span></a>
+   <a href="{{ url_for('jobs') }}">▤ <span>Job Postings</span></a>
+   <a href="{{ url_for('matching') }}">◈ <span>Matching &amp; Skills</span></a>
+   <a href="{{ url_for('interview_assistant') }}">◉ <span>Interview Assistant</span></a>
+   <a href="{{ url_for('screening') }}">◌ <span>Voice Screening</span></a>
+   <a href="{{ url_for('feedback') }}">★ <span>Feedback Analytics</span></a>
+   <a href="{{ url_for('notifications') }}">♧ <span>Notifications</span></a>
+   <a href="{{ url_for('learning_roadmap') }}">✦ <span>Learning Roadmap</span></a>
+   <a href="{{ url_for('candidate_search') }}">⌕ <span>My Profile Search</span></a>
+   <a href="{{ url_for('candidate_compare') }}">⇄ <span>Compare Profiles</span></a>
+  {% elif session.get('role') == 'recruiter' %}
+   <a href="{{ url_for('dashboard') }}">▦ <span>Recruiter Dashboard</span></a>
+   <a href="{{ url_for('analytics_dashboard') }}">▥ <span>Advanced Analytics</span></a>
+   <a href="{{ url_for('upload') }}">▣ <span>Resume Intake</span></a>
+   <a href="{{ url_for('dashboard') }}#candidates">♟ <span>Manage Candidates</span></a>
+   <a href="{{ url_for('jobs') }}">▤ <span>Job Postings</span></a>
+   <a href="{{ url_for('matching') }}">◈ <span>Candidate Matching</span></a>
+   <a href="{{ url_for('pipeline') }}">⇢ <span>Recruitment Pipeline</span></a>
+   <a href="{{ url_for('interview_assistant') }}">◉ <span>Interview Assistant</span></a>
+   <a href="{{ url_for('screening') }}">◌ <span>Voice Screening</span></a>
+   <a href="{{ url_for('feedback') }}">★ <span>Feedback Analytics</span></a>
+   <a href="{{ url_for('notifications') }}">♧ <span>Notifications</span></a>
+   <a href="{{ url_for('candidate_search') }}">⌕ <span>Advanced Search</span></a>
+   <a href="{{ url_for('candidate_compare') }}">⇄ <span>Compare Candidates</span></a>
+   <a href="{{ url_for('interview_scorecards') }}">✓ <span>Interview Scorecards</span></a>
+   <a href="{{ url_for('activity_timeline') }}">◷ <span>Activity Timeline</span></a>
+  {% else %}
+   <a href="{{ url_for('dashboard') }}">▦ <span>Admin Control Center</span></a>
+   <a href="{{ url_for('analytics_dashboard') }}">▥ <span>Advanced Analytics</span></a>
+   <a href="{{ url_for('dashboard') }}#accounts">♙ <span>Account Management</span></a>
+   <a href="{{ url_for('jobs') }}">▤ <span>Job Management</span></a>
+   <a href="{{ url_for('dashboard') }}#candidates">♟ <span>All Candidates</span></a>
+   <a href="{{ url_for('matching') }}">◈ <span>Matching &amp; Skills</span></a>
+   <a href="{{ url_for('pipeline') }}">⇢ <span>System Pipeline</span></a>
+   <a href="{{ url_for('interview_assistant') }}">◉ <span>Interview Tools</span></a>
+   <a href="{{ url_for('screening') }}">◌ <span>Voice Screening</span></a>
+   <a href="{{ url_for('feedback') }}">★ <span>Platform Feedback</span></a>
+   <a href="{{ url_for('notifications') }}">♧ <span>Notifications</span></a>
+   <a href="{{ url_for('candidate_search') }}">⌕ <span>Advanced Search</span></a>
+   <a href="{{ url_for('candidate_compare') }}">⇄ <span>Compare Candidates</span></a>
+   <a href="{{ url_for('interview_scorecards') }}">✓ <span>Interview Scorecards</span></a>
+   <a href="{{ url_for('activity_timeline') }}">◷ <span>Audit &amp; Activity Logs</span></a>
+  {% endif %}
+ </nav>
+ <div class="side-bottom"><div class="user-mini"><div class="avatar">{{ session.get('username','U')[0]|upper }}</div><div><strong>{{ session.get('username') }}</strong><small>{{ session.get('role')|capitalize }}</small></div></div><a class="logout" href="{{ url_for('logout') }}">Logout</a></div>
+</aside>
+{% endif %}
+<main class="{{ 'main-with-sidebar' if session.get('username') else 'main-full' }}">
+{% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for category,message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+{% block content %}{% endblock %}
+</main>
+{% if session.get('username') %}
+<button class="chat-fab" onclick="toggleChat()">✦</button>
+<div class="chat-widget" id="chatWidget"><div class="chat-head"><div><b>Copilot Assistant</b><small>Recruitment AI</small></div><button onclick="toggleChat()">×</button></div><div class="chat-messages" id="chatMessages"><div class="chat-msg bot">Hi! I can help with resumes, jobs, matching, interviews, ATS and voice screening.</div></div><form onsubmit="sendChat(event)"><input id="chatInput" placeholder="Ask anything..." autocomplete="off"><button>➤</button></form></div>
+{% endif %}
+{% block scripts %}{% endblock %}
+<script>
+function toggleChat(){const e=document.getElementById('chatWidget');if(e)e.classList.toggle('open')}
+async function sendChat(ev){ev.preventDefault();const i=document.getElementById('chatInput'),m=i.value.trim();if(!m)return;const box=document.getElementById('chatMessages');const userMsg=document.createElement('div');userMsg.className='chat-msg user';userMsg.textContent=m;box.appendChild(userMsg);i.value='';try{const r=await fetch('{{ url_for("chatbot") if session.get("username") else "/" }}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m})});const d=await r.json();const botMsg=document.createElement('div');botMsg.className='chat-msg bot';botMsg.textContent=d.answer||'Sorry, I could not process that.';box.appendChild(botMsg)}catch(e){const botMsg=document.createElement('div');botMsg.className='chat-msg bot';botMsg.textContent='Assistant temporarily unavailable. Please try again.';box.appendChild(botMsg)}box.scrollTop=box.scrollHeight}
+</script>
+</body></html>

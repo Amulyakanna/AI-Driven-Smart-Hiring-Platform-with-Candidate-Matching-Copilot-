@@ -1,0 +1,27 @@
+
+{% extends "base.html" %}
+{% block title %}{{ "Edit Job" if editing else "New Job" }} — AI Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar">
+  <div><div class="eyebrow">JOB PROFILE</div><h1>{{ "Edit Job Profile" if editing else "Create Job Profile" }}</h1><p>Define the requirements used by the hiring-score engine.</p></div>
+  <a class="secondary-btn" href="{{ url_for('jobs') }}">← Jobs</a>
+</header>
+<section class="upload-layout">
+  <div class="upload-card">
+    <form method="POST">
+      <label>Job title</label><input class="form-input" name="title" value="{{ job.title if job else '' }}" placeholder="Senior Machine Learning Engineer" required>
+      <label>Required skills</label><input class="form-input" name="required_skills" value="{{ job.required_skills|join(', ') if job else '' }}" placeholder="Python, TensorFlow, SQL, Kubernetes" required>
+      <label>Experience required (years)</label><input class="form-input" type="number" min="0" step="0.5" name="experience_required" value="{{ job.experience_required if job else 0 }}">
+      <label>Education required</label><input class="form-input" name="education_required" value="{{ job.education_required if job else '' }}" placeholder="MS Computer Science">
+      <label>Job description</label><textarea class="form-input" name="description" rows="6" placeholder="Role summary and responsibilities...">{{ job.description if job else '' }}</textarea>
+      <button class="primary-btn full" type="submit">{{ "Save Changes" if editing else "Create Job Profile" }} →</button>
+    </form>
+  </div>
+  <div class="process-card">
+    <div class="eyebrow">SCORING MODEL</div><h2>Hiring score</h2>
+    <div class="process-step"><span>60%</span><div><b>Skills</b><p>Required skills matched by the candidate.</p></div></div>
+    <div class="process-step"><span>25%</span><div><b>Experience</b><p>Candidate experience capped at the required level.</p></div></div>
+    <div class="process-step"><span>15%</span><div><b>Education</b><p>Exact/contained education requirement match.</p></div></div>
+  </div>
+</section>
+{% endblock %}

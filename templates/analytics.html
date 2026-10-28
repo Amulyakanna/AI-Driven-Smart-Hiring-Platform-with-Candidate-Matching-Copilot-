@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Advanced Analytics | Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar"><div><div class="eyebrow">INSIGHTS & QUALITY</div><h1>Advanced Recruitment Analytics</h1><p>Interactive visualizations based on the current candidate, job and feedback records.</p></div><div class="header-actions"><a class="secondary-btn" href="{{ url_for('dashboard') }}">← Dashboard</a><a class="primary-btn" href="{{ url_for('matching') }}">Open Candidate Matching</a></div></header>
+<section class="stat-grid">
+ <div class="stat-card"><div class="stat-label">Candidates</div><div class="stat-value">{{ candidates|length }}</div><div class="stat-note">Stored candidate profiles</div></div>
+ <div class="stat-card"><div class="stat-label">Job postings</div><div class="stat-value">{{ jobs|length }}</div><div class="stat-note">Available matching targets</div></div>
+ <div class="stat-card"><div class="stat-label">Candidate–job pairs</div><div class="stat-value">{{ candidates|length * jobs|length }}</div><div class="stat-note">Computed score comparisons</div></div>
+ <div class="stat-card"><div class="stat-label">Satisfaction</div><div class="stat-value">{% if feedback_summary.responses %}{{ feedback_summary.score|round|int }}%{% else %}N/A{% endif %}</div><div class="stat-note">{% if feedback_summary.responses %}{{ feedback_summary.responses }} real response(s){% else %}No feedback submitted yet{% endif %}</div></div>
+</section>
+<section class="visualization-grid">
+ <div class="chart-card"><div class="card-heading"><div><h2>Hiring Funnel</h2><p>Candidate counts by workflow stage.</p></div></div><canvas id="funnelChart" height="230"></canvas></div>
+ <div class="chart-card"><div class="card-heading"><div><h2>Pipeline Composition</h2><p>Share of records at each current stage.</p></div></div><canvas id="stagePolar" height="230"></canvas></div>
+</section>
+<section class="visualization-grid">
+ <div class="chart-card"><div class="card-heading"><div><h2>Resume Intake Trend</h2><p>Uploads by recorded date (latest 14 dates available).</p></div></div><canvas id="intakeLine" height="230"></canvas>{% if not intake_labels %}<p class="empty">Upload resumes to populate this chart.</p>{% endif %}</div>
+ <div class="chart-card"><div class="card-heading"><div><h2>Matching Score Distribution</h2><p>Weighted matching scores across stored candidate–job pairs; this is not a measured accuracy metric.</p></div></div><canvas id="scoreHistogram" height="230"></canvas>{% if not score_rows %}<p class="empty">Add candidates and jobs to calculate matching scores.</p>{% endif %}</div>
+</section>
+<section class="visualization-grid">
+ <div class="chart-card"><div class="card-heading"><div><h2>Skill Supply vs Job Demand</h2><p>Candidate skill mentions compared with required-skill mentions in current job posts.</p></div></div><canvas id="skillDemand" height="280"></canvas></div>
+ <div class="chart-card"><div class="card-heading"><div><h2>Candidate Experience vs Profile Completeness</h2><p>Bubble plot: experience on X, completeness percentage on Y. Each point is one profile.</p></div></div><canvas id="candidateBubble" height="280"></canvas>{% if not candidates %}<p class="empty">Upload candidate resumes to populate this chart.</p>{% endif %}</div>
+</section>
+<section class="visualization-grid">
+ <div class="chart-card"><div class="card-heading"><div><h2>Candidate Status Mix</h2><p>Compact doughnut view for quick comparison.</p></div></div><canvas id="stageDoughnut" height="220"></canvas></div>
+ <div class="chart-card"><div class="card-heading"><div><h2>Highest Matching Pairs</h2><p>Top computed scores from current candidate and job records.</p></div></div><div class="table-wrap"><table><thead><tr><th>Candidate</th><th>Job</th><th>Score</th></tr></thead><tbody>{% for row in score_rows %}<tr><td>{{ row.candidate }}</td><td>{{ row.job }}</td><td><strong>{{ row.score }}%</strong></td></tr>{% else %}<tr><td colspan="3" class="empty">No matching pairs available.</td></tr>{% endfor %}</tbody></table></div></div>
+</section>
+<section class="table-card" id="objectives"><div class="table-header"><div><h2>Missing Objectives & Evidence Tracker</h2><p>Use this list to close gaps before marking a milestone complete. Statuses are deliberately conservative until evidence is verified.</p></div><span class="count-badge">{{ objectives|length }} checks</span></div><div class="table-wrap"><table><thead><tr><th>Milestone</th><th>Objective / gap</th><th>Status</th><th>What to do / evidence needed</th></tr></thead><tbody>{% for o in objectives %}<tr><td>{{ o.milestone }}</td><td><strong>{{ o.objective }}</strong></td><td><span class="status-pill">{{ o.status }}</span></td><td>{{ o.evidence }}</td></tr>{% endfor %}</tbody></table></div><p class="small-note">Important: chart counts and score distributions are computed from current records. A high matching score is not proof of ≥85% matching accuracy. Measure accuracy against a labelled test set.</p></section>
+{% endblock %}
+{% block scripts %}<script>
+const labels={{ statuses|tojson }};
+const counts={{ status_values|tojson }};
+const palette=['#3478f6','#60a5fa','#8b5cf6','#23b7a4','#f2b84b','#20a779','#e36b7b'];
+const baseOpts={responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14}}}};
+new Chart(document.getElementById('funnelChart'),{type:'bar',data:{labels,datasets:[{label:'Candidates',data:counts,backgroundColor:palette,borderRadius:7}]},options:{...baseOpts,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}}}});
+new Chart(document.getElementById('stagePolar'),{type:'polarArea',data:{labels,datasets:[{data:counts,backgroundColor:palette,borderWidth:1,borderColor:'#fff'}]},options:baseOpts});
+new Chart(document.getElementById('stageDoughnut'),{type:'doughnut',data:{labels,datasets:[{data:counts,backgroundColor:palette,borderWidth:2,borderColor:'#fff'}]},options:{...baseOpts,cutout:'62%'}});
+new Chart(document.getElementById('intakeLine'),{type:'line',data:{labels:{{ intake_labels|tojson }},datasets:[{label:'Resume uploads',data:{{ intake_values|tojson }},borderColor:'#3478f6',backgroundColor:'rgba(52,120,246,.14)',fill:true,tension:.35,pointRadius:4}]},options:{...baseOpts,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
+new Chart(document.getElementById('scoreHistogram'),{type:'bar',data:{labels:{{ score_bins.keys()|list|tojson }},datasets:[{label:'Candidate–job pairs',data:{{ score_bins.values()|list|tojson }},backgroundColor:'#8b5cf6',borderRadius:7}]},options:{...baseOpts,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
+new Chart(document.getElementById('skillDemand'),{type:'bar',data:{labels:{{ demand_labels|tojson }},datasets:[{label:'Candidate mentions',data:{{ supply_values|tojson }},backgroundColor:'#23b7a4',borderRadius:5},{label:'Job requirements',data:{{ demand_values|tojson }},backgroundColor:'#8b5cf6',borderRadius:5}]},options:{...baseOpts,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}}}});
+const scatter={{ scatter_points|tojson }};
+new Chart(document.getElementById('candidateBubble'),{type:'bubble',data:{datasets:scatter.map((p,i)=>({label:p.label,data:[{x:p.x,y:p.y,r:Math.max(5,Math.min(14,5+(p.x||0)*.6))}],backgroundColor:palette[i%palette.length]+'bb'}))},options:{...baseOpts,scales:{x:{title:{display:true,text:'Experience (years)'},beginAtZero:true},y:{title:{display:true,text:'Profile completeness (%)'},min:0,max:100}}}});
+</script>{% endblock %}

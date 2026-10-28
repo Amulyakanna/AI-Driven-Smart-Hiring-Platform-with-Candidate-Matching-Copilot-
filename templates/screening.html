@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}AI Voice Interview | Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar"><div><div class="eyebrow">LIVE AI INTERVIEW</div><h1>AI Voice Screening</h1><p>The AI interviewer asks each question aloud. The candidate answers by speaking or typing.</p></div><span class="voice-pill">✦ Voice-enabled interview</span></header>
+<div class="voice-interview-grid">
+<section class="chart-card voice-interview-main">
+ <div class="voice-setup"><div><label for="candidateSelect">Candidate</label><select id="candidateSelect">{% for c in candidates %}<option>{{ c.name or 'Candidate' }}</option>{% else %}<option>Candidate</option>{% endfor %}</select></div><div><label for="jobRole">Job role</label><select id="jobRole">{% for r in roles %}<option {% if r==selected_role %}selected{% endif %}>{{ r }}</option>{% endfor %}</select></div><div><label for="numQuestions">Number of questions (N)</label><input id="numQuestions" type="number" min="1" max="1000" value="{{ num_questions }}"></div><div><label for="questionType">Question type</label><select id="questionType"><option value="mixed">Technical + Behavioral</option><option value="technical">Technical</option><option value="behavioral">Behavioral</option></select></div><button class="primary-btn" type="button" onclick="configureInterview()">Load Questions</button></div>
+ <div class="ai-interviewer"><div class="ai-avatar">✦</div><div><span class="ai-label">RECRUITMENT COPILOT · AI INTERVIEWER</span><h2 id="questionTitle">Ready to begin?</h2><p id="questionText">Choose the role and question count, then select Start Interview. I will ask every question aloud.</p></div></div>
+ <div class="question-progress"><div><span id="progressLabel">Question 0 of {{ questions|length }}</span><b id="progressPercent">0%</b></div><div class="progress-track"><i id="progressBar"></i></div></div>
+ <div class="answer-area"><label for="answerText">Candidate answer</label><textarea id="answerText" rows="4" placeholder="Your spoken answer will appear here. You can also type your answer..."></textarea><div class="answer-actions"><button class="primary-btn" type="button" id="listenBtn" onclick="listenAnswer()">🎙 Answer by Voice</button><button class="secondary-btn" type="button" onclick="nextQuestion()" id="nextBtn" disabled>Save Answer & Next →</button><button class="secondary-btn" type="button" onclick="repeatQuestion()">🔊 Repeat Question</button></div><p class="voice-status" id="voiceStatus" role="status">Ready · Microphone access is requested only when you start voice answering.</p></div>
+ <div class="interview-bottom"><button class="primary-btn" id="startBtn" type="button" onclick="startInterview()">▶ Start Interview</button><button class="secondary-btn" type="button" id="finishBtn" onclick="finishInterview()">Finish Interview</button><button class="secondary-btn" type="button" id="reviewBtn" onclick="reviewAnswers()" disabled>Review Answers</button></div>
+ <section class="chart-card performance-panel" id="performancePanel" hidden style="margin-top:16px">
+  <div class="side-head"><div class="side-icon">★</div><div><h2>Interview Performance Report</h2><p id="performanceSubtitle">Assessment based on answers submitted in this session.</p></div></div>
+  <div class="performance-hero"><div><span>Overall preliminary score</span><strong id="overallScore">0%</strong><small id="performanceVerdict">Complete the interview to see results</small></div><div class="performance-ring" id="performanceRing"><span id="performanceRingScore">0%</span></div></div>
+  <div class="performance-metrics"><div><span>Answer relevance</span><strong id="relevanceScore">0%</strong><div class="perf-track"><i id="relevanceBar"></i></div></div><div><span>Answer completeness</span><strong id="completenessScore">0%</strong><div class="perf-track"><i id="completenessBar"></i></div></div><div><span>Communication structure</span><strong id="communicationScore">0%</strong><div class="perf-track"><i id="communicationBar"></i></div></div><div><span>Questions answered</span><strong id="answeredScore">0/0</strong><div class="perf-track"><i id="answeredBar"></i></div></div></div>
+  <p class="performance-note">This is an automated preliminary rubric based on answer text and completion. It is not a validated measure of truth, expertise, or hiring suitability; a recruiter should review the answers before making a decision.</p>
+ </section>
+ <section class="chart-card" id="reviewPanel" hidden style="margin-top:16px"><div class="side-head"><div class="side-icon">✓</div><div><h2>Interview Review</h2><p id="reviewSummary">Review captured answers before exporting.</p></div></div><div id="reviewList" class="transcript-log"></div><div class="answer-actions"><button class="primary-btn" type="button" onclick="downloadTranscript()">Export Review</button><button class="secondary-btn" type="button" onclick="closeReview()">Close Review</button></div></section>
+</section>
+<aside class="chart-card voice-side"><div class="side-head"><div class="side-icon">☷</div><div><h2>Interview overview</h2><p>Live session progress</p></div></div><div class="overview-metric"><span>Questions planned</span><strong id="plannedCount">{{ questions|length }}</strong></div><div class="overview-metric"><span>Answers captured</span><strong id="answeredCount">0</strong></div><div class="overview-metric"><span>Completion</span><strong id="completionCount">0%</strong></div><div class="voice-tip"><b>How it works</b><ol><li>AI asks a role-specific question using speech.</li><li>Candidate answers using the microphone or text.</li><li>Save each answer to continue to the next question.</li><li>Finish to review the transcript and completeness.</li></ol></div><h3>Session transcript</h3><div id="transcriptLog" class="transcript-log"><p class="transcript-empty">Your questions and answers will appear here.</p></div><form method="post" id="saveForm"><input type="hidden" name="transcript" id="savedTranscript"><button class="secondary-btn full-btn" type="button" onclick="downloadTranscript()">↓ Export Transcript</button></form></aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const questionBank={{ questions|tojson }};
+let questions=[...questionBank], current=-1, answers=[], recognition=null, listening=false, finished=false;
+const $=id=>document.getElementById(id);
+function configureInterview(){
+ const role=$('jobRole').value, n=Math.max(1,Math.min(1000,parseInt($('numQuestions').value||'10',10))), type=$('questionType').value;
+ window.location.href=`{{ url_for('screening') }}?job_role=${encodeURIComponent(role)}&num_questions=${n}&question_type=${type}`;
+}
+function speak(text){
+ if(!('speechSynthesis' in window)){ $('voiceStatus').textContent='Text-to-speech is not supported. Read the question displayed on screen.'; return; }
+ window.speechSynthesis.cancel(); const utter=new SpeechSynthesisUtterance(text); utter.lang='en-US'; utter.rate=0.94; window.speechSynthesis.speak(utter);
+}
+function startInterview(){
+ if(!questions.length){$('voiceStatus').textContent='No questions loaded. Select Load Questions first.';return;}
+ if(listening&&recognition) recognition.stop();
+ answers=Array(questions.length).fill(null); current=0; finished=false;
+ $('startBtn').disabled=true; $('nextBtn').disabled=false; $('finishBtn').disabled=false; $('reviewBtn').disabled=true; $('reviewPanel').hidden=true; $('performancePanel').hidden=true;
+ $('answeredCount').textContent='0'; $('completionCount').textContent='0%'; $('voiceStatus').textContent='Interview started. Listen to the question, then answer.'; renderTranscript(); showQuestion();
+}
+function showQuestion(){
+ if(current<0||current>=questions.length){finishInterview();return;}
+ $('questionTitle').textContent=`Question ${current+1}`; $('questionText').textContent=questions[current]; $('answerText').value=''; $('nextBtn').disabled=false;
+ $('progressLabel').textContent=`Question ${current+1} of ${questions.length}`;
+ const pct=Math.round(current/questions.length*100); $('progressPercent').textContent=pct+'%'; $('progressBar').style.width=pct+'%';
+ speak(`Question ${current+1}. ${questions[current]}`); $('voiceStatus').textContent='AI interviewer is asking the question. Prepare your answer.';
+}
+function repeatQuestion(){if(!finished&&current>=0&&current<questions.length)speak(`Question ${current+1}. ${questions[current]}`);}
+function listenAnswer(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){$('voiceStatus').textContent='Speech recognition is unavailable in this browser. Please type the answer below.';return;}
+ if(listening&&recognition){recognition.stop();return;}
+ recognition=new SR(); recognition.lang='en-US'; recognition.continuous=true; recognition.interimResults=true; let final='';
+ recognition.onstart=()=>{listening=true;$('listenBtn').textContent='■ Stop Listening';$('voiceStatus').textContent='Listening… speak your answer clearly.';};
+ recognition.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript+' ';else interim+=e.results[i][0].transcript;}$('answerText').value=(final+interim).trim();};
+ recognition.onerror=e=>{$('voiceStatus').textContent='Microphone: '+e.error+'. You can type your answer instead.';};
+ recognition.onend=()=>{listening=false;$('listenBtn').textContent='🎙 Answer by Voice';if($('answerText').value.trim())$('voiceStatus').textContent='Answer captured. Select Save Answer & Next when ready.';};
+ recognition.start();
+}
+function nextQuestion(){
+ if(finished||current<0||current>=questions.length)return;
+ const answer=$('answerText').value.trim(); if(!answer){$('voiceStatus').textContent='Please answer by voice or type an answer before continuing.';return;}
+ answers[current]={question:questions[current],answer}; renderTranscript(); updateProgress(); current++;
+ if(current<questions.length)showQuestion(); else finishInterview();
+}
+function updateProgress(){const done=answers.filter(Boolean).length;$('answeredCount').textContent=done;$('completionCount').textContent=Math.round(done/questions.length*100)+'%';}
+function renderTranscript(){
+ const log=$('transcriptLog');log.replaceChildren();
+ answers.forEach((a,i)=>{if(!a)return;const item=document.createElement('div');item.className='transcript-item';const q=document.createElement('b');q.textContent=`Q${i+1}: ${a.question}`;const ans=document.createElement('p');ans.textContent=a.answer;item.append(q,ans);log.append(item);});
+ if(!answers.some(Boolean)){const empty=document.createElement('p');empty.className='transcript-empty';empty.textContent='Your saved questions and answers will appear here.';log.append(empty);}
+}
+function finishInterview(){
+ if(finished)return;
+ if(listening&&recognition){try{recognition.stop();}catch(e){}}
+ if('speechSynthesis' in window)window.speechSynthesis.cancel();
+ finished=true;const done=answers.filter(Boolean).length,pct=questions.length?Math.round(done/questions.length*100):0;
+ $('questionTitle').textContent='Interview Summary';$('questionText').textContent=`Interview finished. ${done} of ${questions.length} questions answered (${pct}%). Select Review Answers to inspect the transcript.`;
+ $('progressLabel').textContent=`${done} of ${questions.length} answered`;$('progressPercent').textContent=pct+'%';$('progressBar').style.width=pct+'%';
+ $('voiceStatus').textContent='Interview completed. Review or export the captured transcript.';$('startBtn').disabled=false;$('startBtn').textContent='↻ Start Again';$('nextBtn').disabled=true;$('finishBtn').disabled=true;$('reviewBtn').disabled=done===0;
+ $('savedTranscript').value=buildTranscript();updateProgress();renderTranscript();
+ generatePerformanceReport();
+ if(done>0)reviewAnswers();
+}
+
+const STOP_WORDS=new Set(['the','a','an','and','or','but','to','of','in','on','for','with','by','is','are','was','were','be','been','being','how','what','why','when','where','which','who','your','you','would','could','should','can','will','about','from','into','describe','explain','tell','me','give','example','that','this','their','they','them','it','as','do','does','did','have','has','had']);
+function tokens(text){return (String(text||'').toLowerCase().match(/[a-z0-9+#.]+/g)||[]).filter(w=>w.length>2&&!STOP_WORDS.has(w));}
+function scoreAnswer(question, answer){
+ const words=String(answer||'').trim().split(/\s+/).filter(Boolean); if(!words.length)return {relevance:0,completeness:0,communication:0,total:0};
+ const qTerms=[...new Set(tokens(question))], aTerms=new Set(tokens(answer));
+ const overlap=qTerms.length?qTerms.filter(w=>aTerms.has(w)).length/qTerms.length:0.5;
+ const relevance=Math.round(Math.min(100, 25 + overlap*55 + Math.min(20, words.length*0.35)));
+ const completeness=Math.round(Math.min(100, words.length/55*100));
+ const sentenceCount=Math.max(1,(String(answer).match(/[.!?]+/g)||[]).length);
+ const uniqueRatio=new Set(words.map(w=>w.toLowerCase())).size/words.length;
+ const avgSentence=words.length/sentenceCount;
+ const structure=avgSentence>=6&&avgSentence<=28?25:avgSentence<6?12:18;
+ const communication=Math.round(Math.min(100, Math.min(45,words.length*1.25)+structure+Math.min(30,uniqueRatio*35)));
+ const total=Math.round(relevance*0.45+completeness*0.25+communication*0.30);
+ return {relevance,completeness,communication,total};
+}
+function generatePerformanceReport(){
+ const answered=answers.map((a,i)=>a?{...a,index:i+1,scores:scoreAnswer(questions[i],a.answer)}:null).filter(Boolean);
+ const done=answered.length, total=questions.length, completion=total?Math.round(done/total*100):0;
+ const mean=key=>done?Math.round(answered.reduce((sum,a)=>sum+a.scores[key],0)/done):0;
+ const relevance=mean('relevance'), completeness=mean('completeness'), communication=mean('communication');
+ const performance=done?Math.round(mean('total')*(0.75+0.25*completion/100)):0;
+ let verdict='Insufficient answers';
+ if(done){if(completion<50)verdict='Incomplete interview — review required';else if(performance>=80)verdict='Strong preliminary performance';else if(performance>=65)verdict='Promising — recruiter review recommended';else if(performance>=45)verdict='Developing — follow-up recommended';else verdict='Needs further assessment';}
+ $('performancePanel').hidden=false;$('overallScore').textContent=performance+'%';$('performanceRingScore').textContent=performance+'%';$('performanceRing').style.background=`conic-gradient(#2477e8 ${performance*3.6}deg, #e8eef6 0deg)`;
+ $('performanceVerdict').textContent=verdict;$('performanceSubtitle').textContent=`${$('candidateSelect').value} · ${$('jobRole').value} · ${done} of ${total} questions answered`;
+ $('relevanceScore').textContent=relevance+'%';$('relevanceBar').style.width=relevance+'%';$('completenessScore').textContent=completeness+'%';$('completenessBar').style.width=completeness+'%';$('communicationScore').textContent=communication+'%';$('communicationBar').style.width=communication+'%';$('answeredScore').textContent=`${done}/${total}`;$('answeredBar').style.width=completion+'%';
+ $('performancePanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function buildTranscript(){return answers.map((a,i)=>a?`Q${i+1}: ${a.question}\nAnswer: ${a.answer}`:'').filter(Boolean).join('\n\n');}
+function reviewAnswers(){
+ const done=answers.filter(Boolean).length;if(!done){$('voiceStatus').textContent='There are no saved answers to review yet. Answer at least one question first.';return;}
+ $('reviewSummary').textContent=`${done} of ${questions.length} questions answered · ${Math.round(done/questions.length*100)}% complete`;
+ const list=$('reviewList');list.replaceChildren();answers.forEach((a,i)=>{const item=document.createElement('div');item.className='transcript-item';const q=document.createElement('b');q.textContent=`Question ${i+1}: ${questions[i]}`;const ans=document.createElement('p');ans.textContent=a?a.answer:'Not answered';if(!a)ans.style.color='#8b95a5';item.append(q,ans);list.append(item);});
+ $('reviewPanel').hidden=false;$('reviewPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeReview(){$('reviewPanel').hidden=true;}
+function downloadTranscript(){const text=buildTranscript();if(!text){$('voiceStatus').textContent='No answers to export yet.';return;}const blob=new Blob([text],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ai_voice_interview_transcript.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+</script>
+{% endblock %}

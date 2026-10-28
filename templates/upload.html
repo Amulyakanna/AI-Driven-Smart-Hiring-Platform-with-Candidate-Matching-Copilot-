@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Resume Upload | Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar"><div><div class="eyebrow">RESUME PARSING & CANDIDATE PROFILING</div><h1>Upload & Process Resumes</h1><p>Upload PDF or DOCX files to create structured candidate profiles.</p></div></header>
+<div class="upload-layout"><section class="upload-card"><div class="panel-heading"><div class="panel-icon">▣</div><div><h2>Upload Resume</h2><p>Drag and drop or browse from your computer</p></div></div>
+<form method="post" enctype="multipart/form-data" id="uploadForm"><div class="drop-zone" id="dropZone"><div class="upload-icon">☁</div><h2>Drop your resume here</h2><p>or click to browse</p><input id="resume" type="file" name="resume" accept=".pdf,.docx" required><div class="accepted">Supported formats: PDF, DOCX · Maximum 10 MB</div></div><div id="fileName" class="selected-file"></div><button class="primary-btn full" type="submit">Upload & Parse Resume</button></form></section>
+<section class="process-card"><div class="eyebrow">PARSING ENGINE</div><h2>Structured Candidate Profile</h2><div class="process-step"><span>01</span><div><b>Text extraction</b><p>Reads PDF/DOCX content.</p></div></div><div class="process-step"><span>02</span><div><b>Information extraction</b><p>Finds contact, skills, education and experience.</p></div></div><div class="process-step"><span>03</span><div><b>Skill normalization</b><p>Maps aliases such as ML → Machine Learning.</p></div></div><div class="process-step"><span>04</span><div><b>Profile quality</b><p>Calculates completeness for recruiter review.</p></div></div></section></div>
+{% endblock %}
+{% block scripts %}<script>
+const z=document.getElementById('dropZone'),i=document.getElementById('resume'),n=document.getElementById('fileName');z.addEventListener('click',()=>i.click());i.addEventListener('change',()=>{if(i.files.length)n.textContent='Selected: '+i.files[0].name});['dragenter','dragover'].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.add('dragging')}));['dragleave','drop'].forEach(e=>z.addEventListener(e,x=>{x.preventDefault();z.classList.remove('dragging')}));z.addEventListener('drop',e=>{if(e.dataTransfer.files.length){i.files=e.dataTransfer.files;n.textContent='Selected: '+i.files[0].name}});
+</script>{% endblock %}

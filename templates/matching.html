@@ -1,0 +1,53 @@
+
+{% extends "base.html" %}
+{% block title %}Candidate Matching — AI Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar">
+  <div><div class="eyebrow">CANDIDATE MATCHING</div><h1>Candidate-Job Matching</h1><p>Compatibility score + matched skills + skill gaps.</p></div>
+  <div class="header-actions"><a class="secondary-btn" href="{{ url_for('jobs') }}">Jobs</a><a class="secondary-btn" href="{{ url_for('matching_all') }}">All Jobs</a>{% if selected_job %}<a class="primary-btn" href="{{ url_for('matching_export', job_id=selected_job.id) }}">Export CSV</a>{% endif %}</div>
+</header>
+
+<section class="table-card">
+  <div class="table-header">
+    <div>
+      <h2>Select a job</h2>
+      <p>Weights: Skills 60% • Experience 25% • Education 15%</p>
+    </div>
+    <form method="GET">
+      <select name="job_id" class="form-input" onchange="this.form.submit()">
+      {% for job in jobs %}
+        <option value="{{ job.id }}" {% if selected_job and job.id == selected_job.id %}selected{% endif %}>{{ job.title }}</option>
+      {% endfor %}
+      </select>
+    </form>
+  </div>
+  {% if selected_job %}
+  <div class="profile-card" style="margin:16px 0">
+    <h2>{{ selected_job.title }}</h2>
+    <p>{{ selected_job.description }}</p>
+    <div class="tag-row">{% for s in selected_job.required_skills %}<span class="skill-tag">{{ s }}</span>{% endfor %}</div>
+  </div>
+  {% endif %}
+  {% if rows %}
+  <div class="table-wrap">
+    <table><thead><tr><th>Rank</th><th>Candidate</th><th>Hiring Score</th><th>Matched Skills</th><th>Skill Gaps</th><th>Recommendations</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td><strong>#{{ loop.index }}</strong></td>
+        <td>{{ row["Candidate"] }}</td>
+        <td><strong>{{ row["Hiring Score (%)"] }}%</strong><small>Skill {{ row["Skill Score (%)"] }}% • Exp {{ row["Experience Score (%)"] }}% • Edu {{ row["Education Score (%)"] }}%</small></td>
+        <td><div class="tag-row">{% for s in row["Matched Skills"].split(", ") if s %}<span class="tag">{{ s }}</span>{% endfor %}</div></td>
+        <td><div class="tag-row">{% for s in row["Missing Skills"].split(", ") if s %}<span class="tag" style="border-color:#f0b4b4">{{ s }}</span>{% endfor %}</div></td>
+        <td><small>{{ row["Recommendations"] or "No skill gap detected." }}</small></td>
+      </tr>
+    {% endfor %}
+    </tbody></table>
+  </div>
+  {% else %}<div class="empty"><h3>No candidate matches yet</h3><p>Upload resumes first, then return here.</p><a class="primary-btn" href="{{ url_for('upload') }}">Upload Resume</a></div>{% endif %}
+</section>
+
+<section class="evaluation-note">
+  <strong>Evaluation:</strong> The supplied project specification targets ≥85% matching accuracy and skill-gap reports for all evaluated candidates. The implementation uses the specified weighted scoring model; an actual accuracy percentage should be measured against a labelled validation set.
+</section>
+{% endblock %}

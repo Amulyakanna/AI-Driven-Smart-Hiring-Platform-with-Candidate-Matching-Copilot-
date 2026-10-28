@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Candidate Profile — AI Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar">
+    <div>
+        <div class="eyebrow">STRUCTURED CANDIDATE PROFILE</div>
+        <h1>{{ candidate.name or 'Candidate profile' }}</h1>
+        <p>Generated from {{ candidate.source_file }}.</p>
+    </div>
+    <div class="header-actions"><a class="secondary-btn" href="{{ url_for('dashboard') }}">← Dashboard</a><a class="primary-btn" href="{{ url_for('candidate_analysis', candidate_id=candidate.id) }}">✦ AI Analysis</a></div>
+</header>
+
+<section class="profile-grid">
+    <div class="profile-main">
+        <div class="profile-card hero-profile">
+            <div class="profile-avatar">{{ (candidate.name or 'C')[0]|upper }}</div>
+            <div>
+                <h2>{{ candidate.name or 'Name not detected' }}</h2>
+                <div class="contact-line">{{ candidate.email or 'Email not detected' }} • {{ candidate.phone or 'Phone not detected' }}</div>
+                <div class="tag-row">
+                    <span class="tag">{{ candidate.experience_years }} years experience</span>
+                    <span class="tag">{{ candidate.skills|length }} skills</span>
+                    <span class="tag">{{ candidate.projects|length }} projects</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <div class="section-title"><h2>Skills</h2><span>{{ candidate.skills|length }} detected</span></div>
+            <div class="large-tags">
+                {% for s in candidate.skills %}
+                    <span class="skill-tag">{{ s }}</span>
+                {% else %}
+                    <span class="muted-text">No skills detected.</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="profile-card">
+                <div class="section-title"><h2>Education</h2></div>
+                <ul class="clean-list">
+                    {% for item in candidate.education %}
+                        <li>{{ item }}</li>
+                    {% else %}<li class="muted-text">No education entry detected.</li>{% endfor %}
+                </ul>
+            </div>
+
+            <div class="profile-card">
+                <div class="section-title"><h2>Certifications</h2></div>
+                <ul class="clean-list">
+                    {% for item in candidate.certifications %}
+                        <li>{{ item }}</li>
+                    {% else %}<li class="muted-text">No certification detected.</li>{% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <div class="section-title"><h2>Projects</h2></div>
+            <ul class="clean-list">
+                {% for item in candidate.projects %}
+                    <li>{{ item }}</li>
+                {% else %}<li class="muted-text">No project section detected.</li>{% endfor %}
+            </ul>
+        </div>
+
+        <div class="profile-card">
+            <div class="section-title"><h2>Experience</h2><span>{{ candidate.experience_years }} years</span></div>
+            <ul class="clean-list">
+                {% for item in candidate.experience_entries %}
+                    <li>{{ item }}</li>
+                {% else %}<li class="muted-text">No role entry detected.</li>{% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <aside>
+        <div class="quality-card">
+            <div class="eyebrow">PARSER QUALITY</div>
+            <div class="quality-ring">
+                <div><strong>{{ candidate.completeness }}%</strong><span>complete</span></div>
+            </div>
+            <p>Eight core information areas are checked: name, email, phone, education, skills, certifications, projects and experience.</p>
+        </div>
+
+        <div class="profile-card">
+            <div class="section-title"><h2>Document</h2></div>
+            <div class="meta-item"><span>Source</span><b>{{ candidate.source_file }}</b></div>
+            <div class="meta-item"><span>Uploaded by</span><b>{{ candidate.uploaded_by }}</b></div>
+            <div class="meta-item"><span>Processed</span><b>{{ candidate.uploaded_at }}</b></div>
+        </div>
+
+        <form method="POST" action="{{ url_for('candidate_delete', candidate_id=candidate.id) }}"
+              onsubmit="return confirm('Delete this candidate profile?');">
+            <button class="danger-btn full" type="submit">Delete profile</button>
+        </form>
+    </aside>
+</section>
+{% endblock %}

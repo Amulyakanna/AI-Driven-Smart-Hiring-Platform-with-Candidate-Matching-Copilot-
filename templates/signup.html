@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Create Account — AI Recruitment Copilot{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="auth-card signup-card">
+    <div class="auth-logo">✦</div>
+    <div class="eyebrow">GET STARTED</div>
+    <h1>Create your account</h1>
+    <p class="auth-subtitle">Set up a recruiter account to upload resumes and explore candidate analytics.</p>
+    <form method="POST" class="auth-form">
+      <label>Username</label>
+      <input name="username" type="text" placeholder="Choose a username" autocomplete="username" minlength="3" required>
+      <label>Account type</label>
+      <select name="role" required>
+        <option value="recruiter">Recruiter</option>
+        <option value="admin">Admin</option>
+      </select>
+      <label>Password</label>
+      <input name="password" type="password" placeholder="At least 6 characters" autocomplete="new-password" minlength="6" required>
+      <label>Confirm password</label>
+      <input name="confirm_password" type="password" placeholder="Re-enter password" autocomplete="new-password" minlength="6" required>
+      <button class="primary-btn auth-submit" type="submit">Create account →</button>
+    </form>
+    <div class="security-note">🔒 Passwords are stored as secure hashes in the local SQLite database.</div>
+    <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+  </div>
+</div>
+{% endblock %}

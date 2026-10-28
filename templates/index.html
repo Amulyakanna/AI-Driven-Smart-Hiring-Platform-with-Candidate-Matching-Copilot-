@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}AI Recruitment Copilot{% endblock %}
+{% block content %}
+<section class="landing">
+    <div class="landing-card">
+        <div class="pill">• RESUME INTELLIGENCE</div>
+        <h1>AI Recruitment<br><span>Copilot</span></h1>
+        <p class="lead">
+            Transform resumes into structured candidate profiles with intelligent parsing,
+            measurable extraction quality, and easy-to-understand recruitment analytics.
+        </p>
+
+        <div class="feature-grid">
+            <div><b>01</b><strong>PDF & DOCX</strong><small>Upload both required resume formats.</small></div>
+            <div><b>02</b><strong>AI Extraction</strong><small>Extract skills, education, experience and more.</small></div>
+            <div><b>03</b><strong>Analytics</strong><small>Understand your candidate pool visually.</small></div>
+        </div>
+
+        <a class="secondary-btn" href="{{ url_for('signup') }}">Create Account</a>
+        <a class="primary-btn large" href="{{ url_for('login') }}">Enter Recruitment Copilot →</a>
+
+        <div class="scope-note">
+            <strong>scope:</strong> Resume Parsing & Candidate Profiling.
+            Candidate-job matching, skill-gap analysis, interview assistance and voice screening
+            are reserved for later  in the supplied project specification.
+        </div>
+    </div>
+</section>
+{% endblock %}

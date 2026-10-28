@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Sign In — AI Recruitment Copilot{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-logo">✦</div>
+    <div class="eyebrow">AI RECRUITMENT COPILOT</div>
+    <h1>Welcome back</h1>
+    <p class="auth-subtitle">Sign in to manage resumes, candidate profiles and recruitment analytics.</p>
+    <form method="POST" class="auth-form">
+      <label>Username</label>
+      <input name="username" type="text" placeholder="Enter username" autocomplete="username" required>
+      <label>Password</label>
+      <input name="password" type="password" placeholder="Enter password" autocomplete="current-password" required>
+      <button class="primary-btn auth-submit" type="submit">Sign in →</button>
+    </form>
+    <div class="demo-box">
+      <strong>Demo accounts</strong>
+      <span>Admin: <b>admin</b> / <b>admin123</b></span>
+      <span>Recruiter: <b>recruiter</b> / <b>recruiter123</b></span>
+      <span>Candidate/User: <b>user</b> / <b>user123</b></span>
+      <small>Demo credentials are case-insensitive for the username. Use the exact password shown.</small>
+    </div>
+    <p class="auth-switch">New recruiter? <a href="{{ url_for('signup') }}">Create an account</a></p>
+  </div>
+</div>
+{% endblock %}

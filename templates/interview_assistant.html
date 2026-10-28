@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Interview Assistant | Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar"><div><div class="eyebrow">AI INTERVIEW & ATS</div><h1>Interview Assistance & ATS</h1><p>Generate role-specific questions, simulate interviews and manage candidate status.</p></div></header>
+<div class="interview-layout">
+<section class="interview-panel">
+<div class="panel-heading"><div class="panel-icon">?</div><div><h2>Interview Question Generator</h2><p>Generate exactly the number of questions you request.</p></div></div>
+<form method="get" class="generator-controls">
+<div><label>Job Position</label><select name="job_role">{% for r in roles %}<option value="{{r}}" {% if r==role %}selected{% endif %}>{{r}}</option>{% endfor %}</select></div>
+<div><label>Question Type</label><select name="question_type"><option value="technical" {% if question_type=='technical' %}selected{% endif %}>Technical</option><option value="behavioral" {% if question_type=='behavioral' %}selected{% endif %}>Behavioral</option><option value="mixed" {% if question_type=='mixed' %}selected{% endif %}>Mixed</option></select></div>
+<div><label>Number of Questions</label><input type="number" name="num_questions" min="1" max="1000" value="{{ questions|length or 10 }}"></div>
+<button class="primary-btn" type="submit">Generate</button>
+</form>
+<div class="question-count">Generated <b>{{ questions|length }}</b> questions · supports 1–1000</div>
+<div class="question-list">{% for q in questions %}<article class="question-item"><span class="question-number">{{loop.index}}</span><div><strong>{{q}}</strong><small>{{'Behavioral' if question_type=='behavioral' or (question_type=='mixed' and loop.index is odd) else 'Technical'}} · response evaluation enabled</small></div></article>{% endfor %}</div>
+<div class="start-card"><div><h3>Start Interactive Interview</h3><p>The candidate will receive every generated question in sequence.</p></div>
+<form method="post"><input type="hidden" name="action" value="start_interview"><input type="hidden" name="job_role" value="{{role}}"><input type="hidden" name="question_type" value="{{question_type}}"><input type="hidden" name="num_questions" value="{{questions|length}}"><div class="inline-fields"><input name="candidate_name" placeholder="Candidate name" required><input name="candidate_email" type="email" placeholder="Candidate email"></div><button class="primary-btn" type="submit">▶ Start Interview</button></form></div>
+</section>
+<section class="interview-panel simulation-panel">
+<div class="panel-heading"><div class="panel-icon">●</div><div><h2>AI Interview Simulation</h2><p>Question-by-question candidate session</p></div></div>
+{% if active_session %}
+<div class="candidate-session"><div>Candidate: <strong>{{active_session.candidate_name}}</strong><br><small>{{active_session.job_role}} · {{active_session.responses|length}} / {{active_session.questions|length}} answered</small></div><b class="session-status">{{active_session.status}}</b></div>
+<div class="chat-window"><div class="chat-bubble ai">Hello {{active_session.candidate_name}}. I will ask {{active_session.questions|length}} questions for the {{active_session.job_role}} role.</div>
+{% for item in active_session.responses %}<div class="chat-bubble user">{{item.response}}</div>{% endfor %}
+{% set n=active_session.responses|length %}{% if n < active_session.questions|length %}<div class="chat-bubble ai"><strong>Question {{n+1}}</strong><br>{{active_session.questions[n]}}</div><form method="post" action="{{url_for('interview_respond')}}" class="response-form"><input type="hidden" name="session_id" value="{{active_session.id}}"><input type="hidden" name="question" value="{{active_session.questions[n]}}"><textarea name="response" rows="4" placeholder="Type the candidate response..." required></textarea><button class="primary-btn" type="submit">Send Answer ➤</button></form>{% else %}<div class="completed-box">✓ All {{active_session.questions|length}} questions answered.</div>{% endif %}</div>
+<form method="post" action="{{url_for('interview_complete',session_id=active_session.id)}}"><button class="secondary-btn complete-btn" type="submit">Complete Interview & Update ATS</button></form>
+{% else %}<div class="empty-simulation"><div class="empty-icon">◉</div><h3>No active interview</h3><p>Choose the role, question type and N, then start a session.</p></div>{% endif %}
+<div class="ats-section"><div class="ats-heading"><div><h2>ATS Candidates</h2><p>Connected candidate records</p></div><span class="status-pill">● Connected</span></div>{% for c in ats_candidates[:6] %}<div class="ats-row"><span class="avatar small">{{c.name[0]|upper}}</span><div><b>{{c.name}}</b><small>{{c.job_applied}}</small></div><span class="status-pill">{{c.status}}</span></div>{% else %}<div class="empty">No ATS candidates yet.</div>{% endfor %}</div>
+</section></div>
+{% endblock %}

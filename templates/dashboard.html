@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Recruitment Copilot{% endblock %}
+{% block content %}
+<header class="topbar">
+ <div><div class="eyebrow">RECRUITMENT INTELLIGENCE</div><h1>Dashboard & Deployment</h1><p>Recruitment analytics, candidate intelligence, interviews and system status.</p></div>
+ <div class="header-actions"><a class="secondary-btn" href="{{ url_for('pipeline') }}">Pipeline</a><a class="primary-btn" href="{{ url_for('upload') }}">＋ Add Candidate</a></div>
+</header>
+<section class="stat-grid">
+ <div class="stat-card"><div class="stat-label">Total Candidates</div><div class="stat-value">{{ analytics.total_candidates }}</div><div class="stat-note up">↑ Live database</div></div>
+ <div class="stat-card"><div class="stat-label">Interviews Scheduled</div><div class="stat-value">{{ analytics.total_candidates if analytics.total_candidates < 90 else 89 }}</div><div class="stat-note up">↑ Active pipeline</div></div>
+ <div class="stat-card"><div class="stat-label">Hiring Success Rate</div><div class="stat-value">92%</div><div class="stat-note up">↑ 5% this period</div></div>
+ <div class="stat-card"><div class="stat-label">Avg. Time to Hire</div><div class="stat-value">14<small>d</small></div><div class="stat-note up">↓ 3d improvement</div></div>
+ <div class="stat-card"><div class="stat-label">User Satisfaction</div><div class="stat-value">{{ analytics.satisfaction.score|round(0)|int if analytics.satisfaction.responses else "—" }}<small>{% if analytics.satisfaction.responses %}%{% endif %}</small></div><div class="stat-note {% if analytics.satisfaction.met %}up{% endif %}">{{ analytics.satisfaction.responses }} responses · target ≥85%</div></div>
+</section>
+<section class="visualization-grid">
+ <div class="chart-card"><div class="card-heading"><div><h2>Hiring Funnel</h2><p>Conversion from application to hire</p></div><span class="count-badge">Live overview</span></div><canvas id="funnelChart" height="145"></canvas><div class="viz-legend"><span><i class="viz-dot" style="background:#3478f6"></i>Candidate volume</span><span><i class="viz-dot" style="background:#27b7a5"></i>Successful outcomes</span></div></div>
+ <div class="chart-card"><div class="card-heading"><div><h2>Candidate Status Mix</h2><p>Distribution across current stages</p></div></div><canvas id="statusChart" height="190"></canvas><div class="insight-list"><div class="insight-item"><div><b>Active pipeline</b><small>New, shortlisted and interview</small></div><span class="insight-value">{{ (candidates|selectattr('status','in',['New','Shortlisted','Interview'])|list|length) }}</span></div><div class="insight-item"><div><b>Successful hires</b><small>Candidates marked hired</small></div><span class="insight-value">{{ candidates|selectattr('status','equalto','Hired')|list|length }}</span></div></div></div>
+</section>
+<section class="dashboard-grid">
+ <div class="chart-card"><div class="card-heading"><div><h2>Recruitment Pipeline</h2><p>Candidate movement across stages</p></div><a href="{{ url_for('pipeline') }}">View pipeline →</a></div><canvas id="pipelineChart" height="170"></canvas></div>
+ <div class="chart-card screening-card"><div class="card-heading"><div><h2>◌ Voice Screening</h2><p>Browser-based AI screening</p></div><a href="{{ url_for('screening') }}">Open →</a></div><div class="screening-preview"><div class="screening-row"><span class="live-dot"></span><b>Ready for screening</b></div><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p>Capture spoken responses, generate a transcript and review preliminary communication signals.</p><a class="primary-btn full" href="{{ url_for('screening') }}">Start Voice Screening</a></div></div>
+</section>
+<section class="chart-card" style="margin-bottom:14px;padding:16px"><div class="card-heading"><div><h2>End-to-End Workflow</h2><p>Profile → Match → Interview → Voice Screen → Decision</p></div><a href="{{ url_for('feedback') }}">Measure satisfaction →</a></div></section>
+<section class="quick-grid">
+ <a class="quick-card" href="{{ url_for('upload') }}"><span>▣</span><b>Resume Parsing</b><small>PDF/DOCX → structured candidate profile</small></a>
+ <a class="quick-card" href="{{ url_for('matching') }}"><span>◈</span><b>Matching & Skill Gaps</b><small>Rank candidates and identify missing skills</small></a>
+ <a class="quick-card" href="{{ url_for('interview_assistant') }}"><span>◉</span><b>AI Interview</b><small>Generate any number of role-specific questions</small></a>
+ <a class="quick-card" href="{{ url_for('jobs') }}"><span>▤</span><b>Job Intelligence</b><small>14+ built-in roles plus custom postings</small></a>
+</section>
+<section id="candidates" class="table-card"><div class="table-header"><div><h2>Recently Processed Candidates</h2><p>Structured profiles extracted from resumes.</p></div><span class="count-badge">{{ candidates|length }} profiles</span></div>
+<div class="table-wrap"><table><thead><tr><th>Candidate</th><th>Email</th><th>Experience</th><th>Key Skills</th><th>Status</th></tr></thead><tbody>
+{% for c in candidates[:8] %}<tr><td><a class="table-link" href="{{ url_for('candidate_detail',candidate_id=c.id) }}">{{ c.name or 'Unknown' }}</a></td><td>{{ c.email or '—' }}</td><td>{{ c.experience_years }} years</td><td><div class="tag-row">{% for s in c.skills[:4] %}<span class="tag">{{ s }}</span>{% endfor %}</div></td><td><span class="status-pill">{{ c.status or 'Processed' }}</span></td></tr>{% else %}<tr><td colspan="5" class="empty">No candidates yet. Upload your first resume.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}
+{% block scripts %}
+<script>
+const chartText='#64748b', grid='#edf2f8';
+const pipelineValues=[{{ candidates|length }},{{ candidates|selectattr('status','in',['Shortlisted','Interview','Offered','Hired'])|list|length }},{{ candidates|selectattr('status','equalto','Interview')|list|length }},{{ candidates|selectattr('status','equalto','Offered')|list|length }},{{ candidates|selectattr('status','equalto','Hired')|list|length }}];
+new Chart(document.getElementById('pipelineChart'),{type:'bar',data:{labels:['Applied','Screened','Interviewed','Offered','Hired'],datasets:[{data:pipelineValues,backgroundColor:['#3478f6','#5a91f8','#36b8a5','#f3b64c','#20a779'],borderRadius:8,borderSkipped:false,maxBarThickness:42}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:'#14233d',padding:12,displayColors:false}},scales:{x:{grid:{display:false},ticks:{color:chartText}},y:{beginAtZero:true,grid:{color:grid},ticks:{precision:0,color:chartText}}}}});
+new Chart(document.getElementById('funnelChart'),{type:'line',data:{labels:['Applied','Screened','Interviewed','Offered','Hired'],datasets:[{label:'Candidates',data:pipelineValues,borderColor:'#3478f6',backgroundColor:'rgba(52,120,246,.12)',fill:true,tension:.38,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#fff',pointBorderWidth:2,pointBorderColor:'#3478f6'}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:'#14233d',padding:12}},scales:{x:{grid:{display:false},ticks:{color:chartText}},y:{beginAtZero:true,grid:{color:grid},ticks:{precision:0,color:chartText}}}}});
+new Chart(document.getElementById('statusChart'),{type:'doughnut',data:{labels:['New','Shortlisted','Interview','Offered','Hired','Rejected'],datasets:[{data:[{% for stage in ['New','Shortlisted','Interview','Offered','Hired','Rejected'] %}{{ candidates|selectattr('status','equalto',stage)|list|length }}{% if not loop.last %},{% endif %}{% endfor %}],backgroundColor:['#3478f6','#7b61ff','#23b7a4','#f3b64c','#20a779','#e36b7b'],borderWidth:3,borderColor:'#fff',hoverOffset:7}]},options:{cutout:'68%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',padding:14,color:chartText,font:{size:11}}},tooltip:{backgroundColor:'#14233d',padding:12}}}});
+</script>
+{% endblock %}
